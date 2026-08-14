@@ -1,0 +1,29 @@
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Packaging output
+build/
+dist/
+*.egg-info/
+
+# macOS metadata
+.DS_Store
+
+# Agent runtime data (only at the repository root)
+/data/
+/logs/
+
+# Local undo journals created inside a selected directory
+.desktop_agent_last_execution.json
+.desktop_agent_journal_*

@@ -1,0 +1,1 @@
+"""Desktop organizer agent package."""
