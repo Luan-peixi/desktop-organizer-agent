@@ -33,51 +33,141 @@ flowchart LR
 
 ## 快速开始
 
-项目要求 Python 3.11 或更高版本。先克隆或下载项目，然后进入项目根目录。
+项目要求 Python 3.11 或更高版本，推荐使用已经通过自动测试的 Python 3.13。第一次安装请按顺序完成以下步骤，不要跳过“确认项目根目录”。
 
-### macOS / Linux
+### 1. 下载并进入真正的项目根目录
+
+不熟悉 Git 的用户可以在本仓库页面点击 **Code → Download ZIP**，下载完成后选择“全部解压”。Windows 解压工具有时会生成两层同名目录；请进入能够直接看到 `app.py`、`pyproject.toml`、`src` 和 `README.md` 的最内层目录。
+
+Windows 用户可以在该目录的文件资源管理器地址栏输入 `powershell` 并回车。先运行下面的命令确认位置正确：
+
+```powershell
+Get-ChildItem -Name
+```
+
+输出中必须包含 `app.py` 和 `pyproject.toml`。如果只看到另一个 `desktop-organizer-agent-main` 文件夹，请先执行：
+
+```powershell
+cd .\desktop-organizer-agent-main
+```
+
+使用 Git 的用户也可以直接克隆：
+
+```bash
+git clone https://github.com/Luan-peixi/desktop-organizer-agent.git
+cd desktop-organizer-agent
+```
+
+### 2. 创建虚拟环境并安装
+
+#### macOS / Linux
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+python -m pip install -e .
 ```
 
-### Windows PowerShell
+#### Windows PowerShell
+
+先查看已经安装的 Python 版本：
 
 ```powershell
-py -3.11 -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -e ".[dev]"
+py --list
 ```
 
-### 配置 OpenAI API
+下面以 Python 3.13 为例。如果列表中只有 3.12 或 3.11，请相应替换第一条命令中的版本号。
+
+```powershell
+py -3.13 -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e .
+```
+
+成功激活后，PowerShell 提示符开头会出现 `(.venv)`。`Set-ExecutionPolicy` 只对当前 PowerShell 窗口生效，关闭后自动恢复。
+
+### 3. 配置 OpenAI API Key
 
 每位用户都需要使用自己的 OpenAI API Key，并确保 API 账户具有可用额度。不要共享作者或其他人的密钥。
 
 macOS / Linux：
 
 ```bash
-export OPENAI_API_KEY="请替换为自己的 API Key"
+printf "请粘贴 OpenAI API Key: "
+read -s OPENAI_API_KEY
+export OPENAI_API_KEY
+printf "\n"
 ```
 
 Windows PowerShell：
 
 ```powershell
-$env:OPENAI_API_KEY = "请替换为自己的 API Key"
+$secureKey = Read-Host "请粘贴 OpenAI API Key" -AsSecureString
+$env:OPENAI_API_KEY = [System.Net.NetworkCredential]::new("", $secureKey).Password
 ```
 
-默认使用项目代码中配置的模型。如果账户无法使用该模型，可以在启动前指定其他兼容模型：
+输入 Key 时屏幕不会显示字符，这是正常现象。API Key 只保存在当前终端进程中，不会写入项目文件；关闭终端后需要重新配置。
 
-```bash
-export OPENAI_MODEL="你的模型名称"
-```
+### 4. 选择 GPT 模型（三选一）
+
+默认使用 `gpt-5.6-sol`。用户也可以在启动前只执行以下三条中的一条：
+
+Windows PowerShell：
+
+最高能力：
 
 ```powershell
-$env:OPENAI_MODEL = "你的模型名称"
+$env:OPENAI_MODEL = "gpt-5.6-sol"
 ```
 
+能力与费用平衡（推荐日常使用）：
+
+```powershell
+$env:OPENAI_MODEL = "gpt-5.6-terra"
+```
+
+低成本、高速度：
+
+```powershell
+$env:OPENAI_MODEL = "gpt-5.6-luna"
+```
+
+macOS / Linux：
+
+最高能力：
+
+```bash
+export OPENAI_MODEL="gpt-5.6-sol"
+```
+
+能力与费用平衡（推荐日常使用）：
+
+```bash
+export OPENAI_MODEL="gpt-5.6-terra"
+```
+
+低成本、高速度：
+
+```bash
+export OPENAI_MODEL="gpt-5.6-luna"
+```
+
+每次只执行一条，后执行的命令会覆盖前一条。正文分类、图片理解和对话式整理都会继承这个选择。不同账户的模型访问权限可能不同；若所选模型不可用，请改选账户可访问的型号。模型能力与价格请以 [OpenAI 官方模型目录](https://developers.openai.com/api/docs/models) 为准。
+
 API Key 只应保存在本机环境变量中，不要写入代码、README、截图、`.env` 文件或提交到 Git。
+
+### 5. 启动前网络自检（可选）
+
+如果网页提示“无法连接 OpenAI API”，可先停止网页并运行：
+
+```powershell
+python -c "import httpx; r=httpx.get('https://api.openai.com/v1/models', timeout=20); print(r.status_code)"
+```
+
+返回 `401` 代表网络已连接，只是该测试没有携带 Key，属于正常结果。出现 `ConnectError`、`Timeout` 或 `SSL` 则是本机网络或代理问题，不是 API 余额问题。浏览器能够联网不代表 Python 自动使用了相同代理；请检查本机代理设置，并遵守 [OpenAI API 支持的国家和地区](https://help.openai.com/en/articles/5347006-openai-api-supported-countries-and-territories/)。
+
+### 6. 启动网页
 
 生成一套可重复使用的跨专业演示文件：
 
@@ -92,6 +182,15 @@ python -m streamlit run app.py
 ```
 
 浏览器会打开本地页面。网页默认自动识别当前电脑用户的桌面，不包含作者用户名或固定绝对路径。
+
+Windows 用户以后再次启动时，应先进入含有 `app.py` 的项目根目录，然后依次运行：
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+.\.venv\Scripts\Activate.ps1
+# 按照上面的安全方式重新配置 OPENAI_API_KEY，并选择模型
+python -m streamlit run app.py
+```
 
 第一次使用建议先生成并选择 `showcase_demo`，不要直接整理真实桌面。打开“读取文档与图片内容”后，再点击“开始智能分析”。
 
@@ -138,7 +237,10 @@ python -m desktop_agent.cli organize showcase_demo --read-content
 
 ## 测试
 
+普通用户无需安装测试依赖。需要参与开发时再运行：
+
 ```bash
+python -m pip install -e ".[dev]"
 python -m pytest -q
 ```
 
